@@ -1,0 +1,10 @@
+# Render.com Blueprint – «New > Blueprint» im Render-Dashboard, dieses Repository wählen, fertig.
+services:
+  - type: web
+    name: luegerjass
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
