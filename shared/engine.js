@@ -89,6 +89,7 @@
       hostSeat: 0,
       turn: null,           // Sitz des Spielers am Zug
       pile: [],             // alle Karten auf dem Stapel (verdeckt, Reihenfolge = Ablage)
+      discard: [],          // aus dem Spiel genommene Vierlinge (offen, je 4 Karten eines Werts)
       roundRank: null,      // angesagter Wert der laufenden Ablagerunde
       lastPlay: null,       // { seat, cards, rank, count }
       decider: null,        // Sitz, der gerade über die letzte Ablage entscheidet
@@ -174,7 +175,7 @@
   function abortToLobby(room) {
     if (room.phase === 'lobby') return ok();
     room.players.forEach(function (p) { p.hand = []; });
-    room.pile = []; room.roundRank = null; room.lastPlay = null; room.decider = null;
+    room.pile = []; room.discard = []; room.roundRank = null; room.lastPlay = null; room.decider = null;
     room.result = null; room.over = null; room.turn = null;
     room.phase = 'lobby';
     pushLog(room, 'Die Partie wurde abgebrochen – zurück in die Lobby.', 'info');
@@ -188,16 +189,45 @@
     const deck = shuffle(Array.from({ length: DECK_SIZE }, function (_, i) { return i; }), room.rng);
     room.players.forEach(function (p) { p.hand = []; });
     deck.forEach(function (card, i) { room.players[i % n].hand.push(card); });
-    room.pile = []; room.roundRank = null; room.lastPlay = null; room.decider = null; room.result = null; room.over = null;
+    room.pile = []; room.discard = []; room.roundRank = null; room.lastPlay = null; room.decider = null; room.result = null; room.over = null;
     room.gamesPlayed += 1;
     room.turn = Math.floor(room.rng() * n);
     room.phase = 'turn';
     pushLog(room, 'Partie ' + room.gamesPlayed + ': Die Karten sind verteilt. ' + pname(room, room.turn) + ' beginnt.', 'info');
     emit(room, { t: 'deal', counts: room.players.map(function (p) { return p.hand.length; }), first: room.turn });
-    // Vier Asse direkt nach dem Austeilen?
+    // Vier Asse direkt nach dem Austeilen? Hat Vorrang.
     for (let s = 0; s < n; s++) {
       if (checkFourAces(room, s, now)) return;
     }
+    // Vierlinge (vier gleiche Werte) werden automatisch aus dem Spiel genommen
+    for (let s = 0; s < n; s++) checkQuartets(room, s);
+    for (let s = 0; s < n; s++) {
+      if (room.players[s].hand.length === 0) { declareWin(room, s); return; }
+    }
+  }
+
+  function declareWin(room, seat) {
+    room.over = { kind: 'win', seat: seat };
+    room.phase = 'over'; room.turn = null; room.decider = null;
+    pushLog(room, pname(room, seat) + ' hat alle Karten abgelegt und gewinnt!', 'win');
+    emit(room, { t: 'win', seat: seat });
+  }
+
+  // Vier gleiche Karten (ausser Asse) auf einer Hand: werden offen aus dem Spiel genommen.
+  function checkQuartets(room, seat) {
+    const p = room.players[seat];
+    if (!p) return false;
+    let any = false;
+    CLAIMABLE.forEach(function (r) {
+      const cards = p.hand.filter(function (c) { return rankOf(c) === r; }).sort(sortCards);
+      if (cards.length < 4) return;
+      p.hand = p.hand.filter(function (c) { return cards.indexOf(c) < 0; });
+      cards.forEach(function (c) { room.discard.push(c); });
+      pushLog(room, pname(room, seat) + ' legt automatisch ' + claimText(4, r) + ' ab – sie sind aus dem Spiel.', 'quartet');
+      emit(room, { t: 'quartet', seat: seat, rank: r, cards: cards.slice() });
+      any = true;
+    });
+    return any;
   }
 
   // Prüft die Vier-Asse-Regel für einen Sitz. Hat Vorrang vor allem anderen.
@@ -250,13 +280,7 @@
     const lp = room.lastPlay;
     room.decider = null;
     pushLog(room, pname(room, seat) + ' glaubt ' + pname(room, lp.seat) + '.', 'info');
-    if (room.players[lp.seat].hand.length === 0) {
-      room.over = { kind: 'win', seat: lp.seat };
-      room.phase = 'over'; room.turn = null;
-      pushLog(room, pname(room, lp.seat) + ' hat alle Karten abgelegt und gewinnt!', 'win');
-      emit(room, { t: 'win', seat: lp.seat });
-      return ok();
-    }
+    if (room.players[lp.seat].hand.length === 0) { declareWin(room, lp.seat); return ok(); }
     room.turn = seat;
     room.phase = 'turn';
     emit(room, { t: 'accepted', seat: lp.seat, next: seat });
@@ -296,15 +320,11 @@
     room.result = null;
     emit(room, { t: 'pickup', seat: r.loser, count: count });
     if (checkFourAces(room, r.loser, now)) return;
-    if (!r.lied && room.players[r.accused].hand.length === 0) {
-      room.over = { kind: 'win', seat: r.accused };
-      room.phase = 'over'; room.turn = null;
-      pushLog(room, pname(room, r.accused) + ' hat alle Karten abgelegt und gewinnt!', 'win');
-      emit(room, { t: 'win', seat: r.accused });
-      return;
-    }
-    // Feste Reihenfolge: der Spieler, der entschieden hat, ist als Nächster dran (neue Runde, freie Ansage).
-    room.turn = r.challenger;
+    if (!r.lied && room.players[r.accused].hand.length === 0) { declareWin(room, r.accused); return; }
+    checkQuartets(room, r.loser);
+    if (room.players[r.loser].hand.length === 0) { declareWin(room, r.loser); return; }
+    // Lag der Rufer richtig, beginnt er die neue Runde. Lag er falsch, nimmt er den Stapel und der Spieler nach ihm beginnt.
+    room.turn = r.lied ? r.challenger : (r.challenger + 1) % room.players.length;
     room.phase = 'turn';
     pushLog(room, 'Neue Runde – ' + pname(room, room.turn) + ' beginnt.', 'info');
     emit(room, { t: 'newRound', seat: room.turn });
@@ -350,6 +370,7 @@
       hand: me ? me.hand.slice().sort(sortCards) : [],
       turn: room.turn,
       pileCount: room.pile.length,
+      discard: room.discard.slice(),
       roundRank: room.roundRank,
       lastPlay: room.lastPlay ? { seat: room.lastPlay.seat, count: room.lastPlay.count, rank: room.lastPlay.rank } : null,
       decider: room.decider,
@@ -405,7 +426,9 @@
       return { cards: cards, rank: best.r };
     }
     // Nur noch Asse auf der Hand: lügen
-    return { cards: lieCards(1), rank: CLAIMABLE[Math.floor(rng() * CLAIMABLE.length)] };
+    const open = CLAIMABLE.filter(function (r) { return !room.discard.some(function (c) { return rankOf(c) === r; }); });
+    const pool = open.length ? open : CLAIMABLE;
+    return { cards: lieCards(1), rank: pool[Math.floor(rng() * pool.length)] };
   }
 
   function botWantsChallenge(room, seat, rng) {
@@ -414,7 +437,8 @@
     if (!lp) return false;
     const hand = room.players[seat].hand;
     const mine = hand.filter(function (c) { return rankOf(c) === lp.rank; }).length;
-    if (mine + lp.count > 4) return true; // mehr als vier gibt es nicht – sicher gelogen
+    const out = room.discard.filter(function (c) { return rankOf(c) === lp.rank; }).length;
+    if (mine + out + lp.count > 4) return true; // mehr als vier gibt es nicht – sicher gelogen
     let p = 0.10 + 0.10 * (lp.count - 1);
     if (room.players[lp.seat].hand.length === 0) p += 0.5; // letzte Karte(n)
     if (room.pile.length > 10) p += 0.1;
