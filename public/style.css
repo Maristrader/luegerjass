@@ -251,6 +251,16 @@ select option { color: #000; }
 .log-list .liar, .log-list .lose { color: #ff9ba0; }
 .log-list .truth, .log-list .win { color: #9fe7b4; }
 .log-list .challenge { color: #ffd37a; }
+.log-list .quartet { color: #bfe0ff; }
+
+/* Ablage: aus dem Spiel genommene Vierlinge */
+.discard { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); display: flex; gap: 14px; align-items: flex-end; justify-content: center; pointer-events: none; }
+.discard:empty { display: none; }
+.quartet { display: flex; flex-direction: column; align-items: center; gap: 3px; animation: pop2 .5s ease both; }
+.quartet-cards { position: relative; width: 62px; height: 46px; }
+.quartet-cards .card { position: absolute; bottom: 0; width: 30px; box-shadow: 0 3px 8px rgba(0, 0, 0, .55); opacity: .95; }
+.quartet-label { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: rgba(244, 234, 210, .85); background: rgba(0, 0, 0, .45); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+@media (max-width: 760px) { .discard { bottom: 5%; gap: 8px; } .quartet-cards { width: 48px; height: 36px; } .quartet-cards .card { width: 24px; } .quartet-label { font-size: 9px; } }
 .log-list .info { color: var(--muted); }
 @media (max-width: 760px) { .log { right: 6px; left: 6px; width: auto; top: auto; bottom: 8px; max-height: 40vh; } }
 

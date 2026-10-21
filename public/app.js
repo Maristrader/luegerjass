@@ -192,6 +192,10 @@
       else if (ev.t === 'joined' && v.phase === 'lobby' && ev.seat !== v.seat) toast(nameOf(v, ev.seat) + ' ist dazugekommen.');
       else if (ev.t === 'left') toast(ev.name + ' hat den Tisch verlassen.');
       else if (ev.t === 'aborted') toast('Die Partie wurde abgebrochen.');
+      else if (ev.t === 'quartet') {
+        toast((ev.seat === v.seat ? 'Du legst automatisch ' : nameOf(v, ev.seat) + ' legt automatisch ') + LJ.claimText(4, ev.rank) + ' ab – sie sind aus dem Spiel.');
+        if (settings.anim && v.phase !== 'lobby') await animateQuartet(v, ev);
+      }
     }
   }
 
@@ -256,6 +260,7 @@
     $('#table-code').textContent = v.code === 'ÜBEN' ? 'Übung' : v.code;
     renderSeats(v);
     renderCenter(v);
+    renderDiscard(v);
     renderMe(v);
     renderHand(v);
     renderActions(v);
@@ -360,6 +365,19 @@
     } else if (v.phase === 'turn') {
       msg.textContent = v.turn === v.seat ? 'Du bist am Zug' : nameOf(v, v.turn) + ' ist am Zug';
     } else msg.textContent = '';
+  }
+
+  function renderDiscard(v) {
+    const box = $('#discard');
+    let html = '';
+    for (let i = 0; i + 3 < v.discard.length; i += 4) {
+      const cards = v.discard.slice(i, i + 4);
+      const rank = LJ.rankOf(cards[0]);
+      html += '<div class="quartet" data-rank="' + rank + '"><div class="quartet-cards">' +
+        cards.map(function (c, k) { return '<div class="card face" style="left:' + (k * 10) + 'px; transform: rotate(' + ((k - 1.5) * 6) + 'deg)">' + LJCards.face(c) + '</div>'; }).join('') +
+        '</div><span class="quartet-label">4 × ' + RANK_LABEL[rank] + '</span></div>';
+    }
+    box.innerHTML = html;
   }
 
   function renderMe(v) {
@@ -559,6 +577,22 @@
     $('#pile').innerHTML = '';
     $('#pile-count').classList.add('hidden');
     await Promise.all(ps);
+  }
+
+  async function animateQuartet(v, ev) {
+    const target = $('#discard .quartet[data-rank="' + ev.rank + '"]');
+    if (!target) return;
+    let from;
+    if (ev.seat === v.seat) { const h = $('#hand'); from = h ? centerOf(h) : null; }
+    else { const s = seatEl(ev.seat); from = s ? centerOf(s) : null; }
+    if (!from) return;
+    target.style.visibility = 'hidden';
+    const to = centerOf(target);
+    const ps = ev.cards.map(function (c, i) {
+      return fly({ from: { x: from.x + (i - 1.5) * 12, y: from.y }, to: { x: to.x + (i - 1.5) * 8, y: to.y }, delay: i * 80, duration: 650, rotate: (i - 1.5) * 10, faceId: c, width: Math.max(44, cardWidth() * 0.7), toScale: 0.6 });
+    });
+    await Promise.all(ps);
+    target.style.visibility = '';
   }
 
   async function animateDeal(v) {

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b1510">
+<title>Lügerjass – Schweizer Bluff-Jass online</title>
+<meta name="description" content="Lügerjass: das Schweizer Bluff-Kartenspiel mit 36 Jasskarten – online spielen mit 4 bis 6 Kollegen.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231b4d33'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%23d4af5a' stroke-width='3'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Georgia' font-weight='700' font-size='22' fill='%23e8c35a'%3ELJ%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ======================================================= Startseite -->
+<section class="screen active" id="screen-start">
+  <div class="start-bg" aria-hidden="true">
+    <div class="start-table"></div>
+    <div class="start-cards" id="start-cards"></div>
+  </div>
+  <div class="start-content">
+    <div class="logo">
+      <div class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="#143d27" stroke="#d4af5a" stroke-width="3"/><circle cx="60" cy="60" r="45" fill="none" stroke="#d4af5a" stroke-width="1" opacity=".7"/><text x="60" y="72" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="900" font-size="38" fill="#e8c35a">LJ</text></svg>
+      </div>
+      <h1 class="logo-text">Lügerjass</h1>
+      <p class="logo-sub">Das Schweizer Bluff-Kartenspiel · 4 bis 6 Spieler</p>
+    </div>
+    <div class="start-buttons">
+      <button class="btn btn-gold btn-big" id="btn-new">Neues Spiel starten</button>
+      <button class="btn btn-outline btn-big" id="btn-join">Tisch beitreten</button>
+      <button class="btn btn-outline" id="btn-practice">Üben gegen Bots</button>
+      <div class="start-row">
+        <button class="btn btn-ghost" id="btn-rules">Spielregeln</button>
+        <button class="btn btn-ghost" id="btn-settings">Einstellungen</button>
+      </div>
+    </div>
+    <p class="start-foot" id="start-foot">Du spielst als <strong id="start-name">–</strong> <span id="start-avatar"></span></p>
+  </div>
+</section>
+
+<!-- ======================================================= Lobby -->
+<section class="screen" id="screen-lobby">
+  <div class="lobby">
+    <div class="lobby-head">
+      <div class="lobby-title">Tisch-Code</div>
+      <div class="lobby-code" id="lobby-code">····</div>
+      <div class="lobby-actions">
+        <button class="btn btn-outline btn-small" id="btn-copy-code">Code kopieren</button>
+        <button class="btn btn-outline btn-small" id="btn-share">Einladungslink teilen</button>
+      </div>
+      <p class="lobby-hint">Deine Kollegen öffnen die gleiche Seite, wählen «Tisch beitreten» und geben den Code ein.</p>
+    </div>
+    <div class="lobby-body">
+      <div class="lobby-players" id="lobby-players"></div>
+      <div class="lobby-settings" id="lobby-settings">
+        <div class="field">
+          <label>Spieler am Tisch</label>
+          <div class="segmented" id="seg-size">
+            <button data-size="4">4</button><button data-size="5">5</button><button data-size="6">6</button>
+          </div>
+        </div>
+        <p class="muted">Gespielt wird reihum: Wer nach dir dran ist, entscheidet, ob er dir glaubt oder «Lügner!» ruft.</p>
+      </div>
+    </div>
+    <div class="lobby-foot">
+      <p class="lobby-status" id="lobby-status"></p>
+      <button class="btn btn-gold btn-big" id="btn-start" disabled>Partie starten</button>
+      <button class="btn btn-ghost" id="btn-leave-lobby">Tisch verlassen</button>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= Spieltisch -->
+<section class="screen" id="screen-table">
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="brand">Lügerjass</span>
+      <span class="code-chip" id="table-code"></span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-small" id="btn-log-toggle">Verlauf</button>
+      <button class="btn btn-ghost btn-small" id="btn-rules-2">Regeln</button>
+      <button class="btn btn-ghost btn-small" id="btn-menu">Menü</button>
+    </div>
+  </header>
+
+  <div class="table-wrap">
+    <div class="felt" id="felt">
+      <div class="felt-rim"></div>
+      <div class="center" id="center">
+        <div class="pile-area">
+          <div class="pile" id="pile"></div>
+          <div class="pile-count" id="pile-count"></div>
+        </div>
+        <div class="reveal" id="reveal"></div>
+        <div class="claim-box" id="claim-box"></div>
+        <div class="center-msg" id="center-msg"></div>
+      </div>
+      <div class="discard" id="discard"></div>
+      <div id="seats"></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="me-row">
+      <div class="me-info" id="me-info"></div>
+      <div class="status-line" id="status-line"></div>
+    </div>
+    <div class="hand-wrap">
+      <div class="hand" id="hand"></div>
+    </div>
+    <div class="actions" id="actions"></div>
+  </div>
+
+  <aside class="log" id="log"><div class="log-title">Verlauf</div><div class="log-list" id="log-list"></div></aside>
+  <div class="toasts" id="toasts"></div>
+</section>
+
+<!-- ======================================================= Overlay (Sieg / Niederlage) -->
+<div class="overlay hidden" id="overlay">
+  <canvas class="confetti" id="confetti"></canvas>
+  <div class="overlay-card" id="overlay-card"></div>
+</div>
+
+<!-- ======================================================= Modale -->
+<div class="modal hidden" id="modal-new">
+  <div class="modal-card">
+    <h2>Neuer Tisch</h2>
+    <div class="field"><label for="new-name">Dein Name</label><input id="new-name" maxlength="16" placeholder="Name am Tisch"></div>
+    <div class="field"><label>Dein Avatar</label><div class="avatar-grid" data-picker></div></div>
+    <div class="field"><label>Spieler am Tisch</label>
+      <div class="segmented" id="new-size"><button data-size="4" class="on">4</button><button data-size="5">5</button><button data-size="6">6</button></div>
+    </div>
+    <p class="muted">Du bist der Host: Du startest die Partie, sobald alle am Tisch sitzen.</p>
+    <div class="modal-buttons"><button class="btn btn-ghost" data-close>Abbrechen</button><button class="btn btn-gold" id="btn-new-go">Tisch eröffnen</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-join">
+  <div class="modal-card">
+    <h2>Tisch beitreten</h2>
+    <div class="field"><label for="in-code">Tisch-Code</label><input id="in-code" maxlength="4" autocomplete="off" autocapitalize="characters" placeholder="z. B. K7PX"></div>
+    <div class="field"><label for="join-name">Dein Name</label><input id="join-name" maxlength="16" placeholder="Name am Tisch"></div>
+    <div class="field"><label>Dein Avatar</label><div class="avatar-grid" data-picker></div></div>
+    <div class="modal-buttons"><button class="btn btn-ghost" data-close>Abbrechen</button><button class="btn btn-gold" id="btn-join-go">Beitreten</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-practice">
+  <div class="modal-card">
+    <h2>Üben gegen Bots</h2>
+    <p class="muted">Du spielst allein gegen Computer-Gegner – zum Ausprobieren der Regeln und der Bedienung.</p>
+    <div class="field"><label for="practice-name">Dein Name</label><input id="practice-name" maxlength="16" placeholder="Name am Tisch"></div>
+    <div class="field"><label>Spieler am Tisch (inklusive dir)</label>
+      <div class="segmented" id="practice-size"><button data-size="4" class="on">4</button><button data-size="5">5</button><button data-size="6">6</button></div>
+    </div>
+    <div class="modal-buttons"><button class="btn btn-ghost" data-close>Abbrechen</button><button class="btn btn-gold" id="btn-practice-go">Los</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-settings">
+  <div class="modal-card">
+    <h2>Einstellungen</h2>
+    <div class="field"><label for="in-name">Dein Name</label><input id="in-name" maxlength="16" placeholder="Name am Tisch"></div>
+    <div class="field"><label>Dein Avatar</label><div class="avatar-grid" data-picker></div></div>
+    <div class="field check"><label><input type="checkbox" id="in-anim" checked> Animationen</label></div>
+    <div class="modal-buttons"><button class="btn btn-gold" id="btn-settings-save">Speichern</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-rules">
+  <div class="modal-card modal-wide">
+    <h2>Spielregeln</h2>
+    <div class="rules">
+      <h3>Ziel</h3>
+      <p>Wer zuerst alle Karten los ist, gewinnt. Gespielt wird mit den 36 Schweizer Jasskarten (Eichel, Rosen, Schellen, Schilten – je 6, 7, 8, 9, Banner, Under, Ober, König, Ass) mit 4 bis 6 Spielern. Alle spielen gegeneinander.</p>
+      <h3>Ablegen und Ansagen</h3>
+      <p>Wer am Zug ist, legt 1 bis 4 Karten verdeckt auf den Stapel und sagt einen Kartenwert an, z. B. «zwei Könige». Ob es wirklich Könige sind, ist egal – lügen und bluffen ist erlaubt. In einer laufenden Ablagerunde sagen alle denselben Wert an; nur die Anzahl darf sich unterscheiden.</p>
+      <h3>Asse</h3>
+      <p>Asse dürfen <strong>nie</strong> angesagt werden. Man kann sie nur loswerden, indem man sie als etwas anderes ausgibt – also lügt.</p>
+      <h3>Feste Reihenfolge – «Glauben» oder «Lügner!»</h3>
+      <p>Gespielt wird reihum. Nach jeder Ablage entscheidet <strong>nur der direkt nächste Spieler</strong>: Glaubt er die Ansage, legt er selbst Karten ab und sagt an. Ruft er «Lügner!», werden nur die zuletzt abgelegten Karten aufgedeckt:</p>
+      <ul>
+        <li>Mindestens eine Karte passt nicht zur Ansage: Der Lügner nimmt den <strong>ganzen</strong> Stapel aus der Tischmitte auf.</li>
+        <li>Alle Karten stimmen: Wer «Lügner!» gerufen hat, nimmt den <strong>ganzen</strong> Stapel auf.</li>
+      </ul>
+      <p>Danach ist die Tischmitte leer, und der Spieler, der entschieden hat, beginnt eine neue Runde mit freier Ansage.</p>
+      <h3>Vier gleiche Karten = automatisch weg</h3>
+      <p>Hat jemand alle vier Karten eines Werts auf der Hand (z. B. alle vier Könige), nach dem Austeilen oder nach dem Aufnehmen eines Stapels, werden sie automatisch aus dem Spiel genommen und für alle sichtbar neben dem Stapel abgelegt. Ein Wert, der so weg ist, kann nur noch als Lüge angesagt werden. Wird die Hand dadurch leer, hat der Spieler gewonnen.</p>
+      <h3>Vier Asse = sofort verloren</h3>
+      <p>Wer alle vier Asse gleichzeitig auf der Hand hat – nach dem Austeilen oder nach dem Aufnehmen eines Stapels – hat die Partie sofort verloren. Danach startet automatisch eine neue Partie mit denselben Spielern.</p>
+      <h3>Gewinnen</h3>
+      <p>Wer seine letzte Karte ablegt, hat erst gewonnen, wenn der nächste Spieler ihm geglaubt hat – oder ihn zu Unrecht als Lügner beschuldigt hat.</p>
+    </div>
+    <div class="modal-buttons"><button class="btn btn-gold" data-close>Verstanden</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-menu">
+  <div class="modal-card">
+    <h2>Menü</h2>
+    <div class="menu-list">
+      <button class="btn btn-outline" id="btn-menu-newgame">Neue Partie</button>
+      <button class="btn btn-outline" id="btn-menu-abort">Partie abbrechen – zurück in die Lobby</button>
+      <button class="btn btn-outline danger" id="btn-menu-leave">Tisch verlassen</button>
+    </div>
+    <p class="muted" id="menu-hint"></p>
+    <div class="modal-buttons"><button class="btn btn-ghost" data-close>Schliessen</button></div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="cards.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
